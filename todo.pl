@@ -1,4 +1,4 @@
-#!/usr/bin/perl 
+#!/usr/bin/perl
 
 use strict;
 use warnings;
@@ -24,14 +24,14 @@ todo.pl - Yet another simple text-based TODO script
         Example:
             # Add a new TODO to the file.
             todo.pl add Pick up bananas on way home.
-            
+
             # List all outstanding TODOs.
             todo.pl ls
 
             # List all outstanding TODOs containing the string Monday.
             todo.pl ls Monday
 
-            # Mark a TODO as completed. 
+            # Mark a TODO as completed.
             todo.pl do 4a8a
 
             # Add a new, completed TODO.
@@ -58,7 +58,7 @@ The text file is in the following format:
 
     Status:Creation date:Update date:Task string
 
-With each task being on a single line. 
+With each task being on a single line.
 
 The status codes currently are:
 
@@ -95,7 +95,7 @@ Dave Webb L<github@d5ve.com>
 =head1 LICENSE
 
 todo.pl is free software. It comes without any warranty, to the extent permitted
-by applicable law. 
+by applicable law.
 
 todo.pl is released under the I<WTFPL Version 2.0> license - L<http://sam.zoy.org/wtfpl/COPYING>
 
