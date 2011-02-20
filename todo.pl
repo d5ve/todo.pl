@@ -1,3 +1,10 @@
+#!/usr/bin/perl 
+
+use strict;
+use warnings;
+
+use Pod::Usage ();
+
 =head1 NAME
 
 todo.pl - Yet another simple text-based TODO script
@@ -29,6 +36,17 @@ todo.pl - Yet another simple text-based TODO script
 
             # Add a new, completed TODO.
             todo.pl done Cancel car insurance.
+
+=cut
+
+my $command = shift || Pod::Usage::pod2usage(1);
+
+Pod::Usage::pod2usage("ERROR: Unknown command '$command'")
+    unless grep { $_ eq $command } (qw( add delete do done ls help ));
+
+Pod::Usage::pod2usage(1) if $command eq 'help';
+
+exit;
 
 =head1 DESCRIPTION
 
@@ -80,6 +98,5 @@ todo.pl is free software. It comes without any warranty, to the extent permitted
 by applicable law. 
 
 todo.pl is released under the I<WTFPL Version 2.0> license - L<http://sam.zoy.org/wtfpl/COPYING>
-
 
 =cut
