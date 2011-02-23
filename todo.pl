@@ -3,7 +3,10 @@
 use strict;
 use warnings;
 
+use Data::Dumper;
+$Data::Dumper::Sortkeys = 1;
 use Pod::Usage ();
+use File::Spec ();
 
 =head1 NAME
 
@@ -39,6 +42,7 @@ todo.pl - Yet another simple text-based TODO script
 
 =cut
 
+my $TODO_FILE = File::Spec->catfile($ENV{HOME}, 'todo.txt');
 my $command = shift || Pod::Usage::pod2usage(1);
 
 Pod::Usage::pod2usage("ERROR: Unknown command '$command'")
@@ -46,7 +50,63 @@ Pod::Usage::pod2usage("ERROR: Unknown command '$command'")
 
 Pod::Usage::pod2usage(1) if $command eq 'help';
 
+my $id;
+my $string;
+
+if ( $command eq 'delete' || $command eq 'do' ) {
+    $id = shift or Pod::Usage::pod2usage("Please provide a TODO id for $command");
+}
+else {
+    $string = join ' ', @ARGV;
+}
+
+$command eq 'ls' and list_todos($string);
+
 exit;
+
+=head1 SUBROUTINES
+
+=head2 B<list_todos(C<filter string>)>
+
+Print out the current list of TODOs, filtering by any string passed in.
+
+Expects:
+    Filter string, an optional string to filter TODOs by.
+
+Returns:
+    None.
+
+=cut
+
+sub list_todos {
+    my $filter_string = shift || '';
+
+    my $todos = read_todos();
+
+    foreach my $todo ( read_todos() ) {
+        print "$todo->{contents}\n" if $todo->{contents} =~ m{\Q $filter_string \E}ixms;
+    }
+}
+
+=head2 B<read_todos()>
+
+Read the contents of the todo file from disk, filtering for active TODOs only.
+Then parse each into the constituent fields.
+
+Expects:
+    None.
+
+Returns:
+    Reference to a list of hashes.
+
+=cut
+
+sub read_todos {
+
+    return ();
+
+}
+
 
 =head1 DESCRIPTION
 
