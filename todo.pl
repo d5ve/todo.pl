@@ -7,6 +7,10 @@ use Data::Dumper;
 $Data::Dumper::Sortkeys = 1;
 use Pod::Usage ();
 use File::Spec ();
+use POSIX ();
+#use Digest::MD5;
+# use Digest ();
+use Digest::SHA ();
 
 =head1 NAME
 
