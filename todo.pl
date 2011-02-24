@@ -42,7 +42,7 @@ todo.pl - Yet another simple text-based TODO script
 
 =cut
 
-my $TODO_FILE = File::Spec->catfile($ENV{HOME}, 'todo.txt');
+my $TODO_FILE = File::Spec->catfile( $ENV{HOME}, 'todo.txt' );
 my $command = shift || Pod::Usage::pod2usage(1);
 
 Pod::Usage::pod2usage("ERROR: Unknown command '$command'")
@@ -61,6 +61,8 @@ else {
 }
 
 $command eq 'ls' and list_todos($string);
+$command eq 'add' and add_todo($string);
+$command eq 'done' and add_todo($string, done => 1);
 
 exit;
 
@@ -84,29 +86,79 @@ sub list_todos {
     my $todos = read_todos();
 
     foreach my $todo ( read_todos() ) {
-        print "$todo->{contents}\n" if $todo->{contents} =~ m{\Q $filter_string \E}ixms;
+        next unless $todo->{status} eq 'T';
+        print "$todo->{contents}\n"
+            if $filter_string eq '' || $todo->{contents} =~ m{\Q $filter_string \E}ixms;
     }
 }
 
 =head2 B<read_todos()>
 
-Read the contents of the todo file from disk, filtering for active TODOs only.
-Then parse each into the constituent fields.
+Read the contents of the TODO file from disk, then parse each into the
+constituent fields.
 
 Expects:
     None.
 
 Returns:
-    Reference to a list of hashes.
+    List of hash refs, each containing a TODO.
 
 =cut
 
 sub read_todos {
 
-    return ();
+    if ( !-f $TODO_FILE ) {
+        return ();
+    }
+
+    open my $FILE, '<', $TODO_FILE
+        or die "ERROR: Unable to open '$TODO_FILE' for reading - $!";
+
+    my @todos;
+
+    foreach my $line (<$FILE>) {
+        chomp $line;
+        my ( $status, $id, $creation_date, $completed_date, $todo ) = split ':', $line;
+
+        push @todos,
+            {
+            completed_date => $completed_date,
+            id             => $id,
+            status         => $status,
+            todo           => $todo
+            };
+    }
+
+    close $FILE or die "ERROR: Unable to close '$TODO_FILE' after reading - $!";
+
+    return @todos;
 
 }
 
+=head2 B<add_todo(C<TODO string>, C<%args>)>
+
+Add a new TODO to the file. Optionally mark it as already completed.
+
+This appends a new line to the TODO file, setting the ID, status, and dates as
+required.  The normal status is C<T>. The creation date field is set to the
+current datetime. If the C<done> argument is passed, then the status is set to
+C<C>, and the completion date is also set to the current datetime.
+
+The new ID, status, and TODO string are printed to STDOUT.
+
+Expects:
+    TODO string - The text of the TODO.
+    %ARGS       - An optional hash of arguments.
+                  Currently:
+                    done => 0|1 - Mark this TODO as completed immediately.
+Returns:
+    None.
+
+=cut
+
+sub add_todo {
+
+}
 
 =head1 DESCRIPTION
 
@@ -116,7 +168,7 @@ or completed.
 
 The text file is in the following format:
 
-    Status:Creation date:Update date:Task string
+    Status:ID:Creation date:Update date:Task string
 
 With each task being on a single line.
 
@@ -143,8 +195,8 @@ of the functionality of B<todo.txt>, but it's the subset I used or wanted.
 
 B<t-> was my inspiration for actually writing my own script. It is a tiny
 python script offering the minimum functionlity that the author needed. I have
-never used it, but read the source and figured I could do the same in perl
-easily.
+never used it, but read the source and figured I could write something as
+simple in Perl which did exactly what I wanted.
 
 =back
 
