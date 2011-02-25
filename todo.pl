@@ -90,7 +90,7 @@ sub list_todos {
 
     foreach my $todo ( read_todos() ) {
         next unless $todo->{status} eq 'T';
-        print "$todo->{todo}\n"
+        print "$todo->{id}\t$todo->{todo}\n"
             if $filter_string eq '' || $todo->{todo} =~ m{\Q$filter_string\E}ixms;
     }
 }
