@@ -7,7 +7,7 @@ use Data::Dumper;
 $Data::Dumper::Sortkeys = 1;
 use Pod::Usage ();
 use File::Spec ();
-use POSIX ();
+use POSIX      ();
 use Digest::MD5;
 
 =head1 NAME
@@ -46,26 +46,30 @@ todo.pl - Yet another simple text-based TODO script
 
 my $ID_LENGTH = 4;
 my $TODO_FILE = File::Spec->catfile( $ENV{HOME}, 'todo.txt' );
-my $command = shift || Pod::Usage::pod2usage(1);
+my $command   = shift || Pod::Usage::pod2usage(1);
 
 Pod::Usage::pod2usage("ERROR: Unknown command '$command'")
     unless grep { $_ eq $command } (qw( add delete do done ls help ));
 
 Pod::Usage::pod2usage(1) if $command eq 'help';
 
-my $id;
-my $string;
-
 if ( $command eq 'delete' || $command eq 'do' ) {
-    $id = shift or Pod::Usage::pod2usage("Please provide a TODO id for $command");
+    my $id = shift or Pod::Usage::pod2usage("Please provide a TODO id for $command");
+    mark_todo( $id, 'C' ) if $command eq 'do';
+    mark_todo( $id, 'D' ) if $command eq 'delete' );
+
 }
 else {
-    $string = join ' ', @ARGV;
+        my $string = join ' ', @ARGV;
+        if ( $command eq 'ls' ) {
+            list_todos($string);
+        }
+        else {
+            Pod::Usage::pod2usage("Please provide a TODO string for $command") unless $string;
+            $command eq 'add' and add_todo($string);
+            $command eq 'done' and add_todo( $string, done => 1 );
+        }
 }
-
-$command eq 'ls' and list_todos($string);
-$command eq 'add' and add_todo($string);
-$command eq 'done' and add_todo($string, done => 1);
 
 exit;
 
@@ -84,15 +88,15 @@ Returns:
 =cut
 
 sub list_todos {
-    my $filter_string = shift || '';
+        my $filter_string = shift || '';
 
-    my $todos = read_todos();
+        my $todos = read_todos();
 
-    foreach my $todo ( read_todos() ) {
-        next unless $todo->{status} eq 'T';
-        print "$todo->{id}\t$todo->{todo}\n"
-            if $filter_string eq '' || $todo->{todo} =~ m{\Q$filter_string\E}ixms;
-    }
+        foreach my $todo ( read_todos() ) {
+            next unless $todo->{status} eq 'T';
+            print "$todo->{id}\t$todo->{todo}\n"
+                if $filter_string eq '' || $todo->{todo} =~ m{\Q$filter_string\E}ixms;
+        }
 }
 
 =head2 B<read_todos()>
@@ -110,31 +114,32 @@ Returns:
 
 sub read_todos {
 
-    if ( !-f $TODO_FILE ) {
-        return ();
-    }
+        if ( !-f $TODO_FILE ) {
+            return ();
+        }
 
-    open my $FILE, '<', $TODO_FILE
-        or die "ERROR: Unable to open '$TODO_FILE' for reading - $!";
+        open my $FILE, '<', $TODO_FILE
+            or die "ERROR: Unable to open '$TODO_FILE' for reading - $!";
 
-    my @todos;
+        my @todos;
 
-    foreach my $line (<$FILE>) {
-        chomp $line;
-        my ( $status, $id, $creation_date, $completed_date, $todo ) = split ':', $line;
+        foreach my $line (<$FILE>) {
+            chomp $line;
+            my ( $status, $id, $creation_date, $completed_date, @todo ) = split ':', 5;
+            my $todo = join ' ', @todo;
+            push @todos,
+                {
+                creation_date  => $creation_date,
+                completed_date => $completed_date,
+                id             => $id,
+                status         => $status,
+                todo           => $todo
+                };
+        }
 
-        push @todos,
-            {
-            completed_date => $completed_date,
-            id             => $id,
-            status         => $status,
-            todo           => $todo
-            };
-    }
+        close $FILE or die "ERROR: Unable to close '$TODO_FILE' after reading - $!";
 
-    close $FILE or die "ERROR: Unable to close '$TODO_FILE' after reading - $!";
-
-    return @todos;
+        return @todos;
 
 }
 
@@ -160,26 +165,75 @@ Returns:
 =cut
 
 sub add_todo {
-    my $todo = shift or Pod::Usage::pod2usage("Please supply a TODO string to add.");
-    my %args = @_;
+        my $todo = shift or die "add_todo() needs a TODO string";
+        my %args = @_;
 
-    my $done = $args{done};
+        my $done = $args{done};
 
-    # Prepare TODO line.
-    my $id = substr(Digest::MD5::md5_hex($todo), 0, $ID_LENGTH);
-    my $now = POSIX::strftime('%Y-%m-%d_%H%M%S', localtime());
-    my $line = sprintf '%s:%s:%s:%s:%s',
-        ($done ? 'C' : 'T'),
-        $id,
-        $now,
-        ($done ? $now : ''),
-        $todo;
+        # Prepare TODO line.
+        my $id = substr( Digest::MD5::md5_hex($todo), 0, $ID_LENGTH );
+        my $now = POSIX::strftime( '%Y-%m-%d_%H%M%S', localtime() );
+        my $line = sprintf '%s:%s:%s:%s:%s',
+            ( $done ? 'C' : 'T' ),
+            $id,
+            $now,
+            ( $done ? $now : '' ),
+            $todo;
 
-    # Append this TODO to the file.
-    open my $FILE, '>>', $TODO_FILE
-        or die "ERROR: Unable to open '$TODO_FILE' for appending - $!";
-    print $FILE $line, "\n";
-    close $FILE or die "ERROR: Unable to close '$TODO_FILE' after appending - $!";
+        # Append this TODO to the file.
+        open my $FILE, '>>', $TODO_FILE
+            or die "ERROR: Unable to open '$TODO_FILE' for appending - $!";
+        print $FILE $line, "\n";
+        close $FILE or die "ERROR: Unable to close '$TODO_FILE' after appending - $!";
+}
+
+=head2 B<mark_todo(C<ID>, C<Status>)>
+
+Load the TODO file, and look for a TODO by ID. If found, then mark the TODO as
+specified.
+
+Prints out the work being done.
+
+Expects:
+    ID - The ID of the TODO to operate on.
+    Status - The status to mark the TODO as.
+
+Returns:
+    None.
+
+=cut
+
+sub mark_todo {
+    my $id     = shift or die "mark_todo() needs a TODO ID";
+    my $status = shift or die "mark_todo() needs a TODO status";
+
+    my @todos           = read_todos();
+    my $unsaved_changes = 0;
+
+    foreach my $todo (@todos) {
+        if ( $todo->{id} eq $id ) {
+            $todo->{} = POSIX::strftime( '%Y-%m-%d_%H%M%S', localtime() );
+            # Found it!
+            # Now mark as $status, and save the file back.
+            $todo->{status} = $status;
+            $unsaved_changes = 1;
+            last;
+        }
+    }
+
+    if ($unsaved_changes) {
+        my $temp_file = "$TODO_FILE.tmp";
+        open my $FILE, '>', $temp_file
+            or die "ERROR: Unable to open '$temp_file' for writing - $!";
+        foreach my $todo (@todos) { 
+            
+        }
+        close $FILE or die "ERROR: Unable to close '$temp_file' after appending - $!";
+    }
+    else {
+        print "Unable to find '$id' to mark as '$status'\n";
+        return 0;
+    }
 }
 
 =head1 DESCRIPTION
