@@ -8,9 +8,7 @@ $Data::Dumper::Sortkeys = 1;
 use Pod::Usage ();
 use File::Spec ();
 use POSIX ();
-#use Digest::MD5;
-# use Digest ();
-use Digest::SHA ();
+use Digest::MD5;
 
 =head1 NAME
 
@@ -46,6 +44,7 @@ todo.pl - Yet another simple text-based TODO script
 
 =cut
 
+my $ID_LENGTH = 4;
 my $TODO_FILE = File::Spec->catfile( $ENV{HOME}, 'todo.txt' );
 my $command = shift || Pod::Usage::pod2usage(1);
 
@@ -91,8 +90,8 @@ sub list_todos {
 
     foreach my $todo ( read_todos() ) {
         next unless $todo->{status} eq 'T';
-        print "$todo->{contents}\n"
-            if $filter_string eq '' || $todo->{contents} =~ m{\Q $filter_string \E}ixms;
+        print "$todo->{todo}\n"
+            if $filter_string eq '' || $todo->{todo} =~ m{\Q$filter_string\E}ixms;
     }
 }
 
@@ -161,7 +160,26 @@ Returns:
 =cut
 
 sub add_todo {
+    my $todo = shift or Pod::Usage::pod2usage("Please supply a TODO string to add.");
+    my %args = @_;
 
+    my $done = $args{done};
+
+    # Prepare TODO line.
+    my $id = substr(Digest::MD5::md5_hex($todo), 0, $ID_LENGTH);
+    my $now = POSIX::strftime('%Y-%m-%d_%H%M%S', localtime());
+    my $line = sprintf '%s:%s:%s:%s:%s',
+        ($done ? 'C' : 'T'),
+        $id,
+        $now,
+        ($done ? $now : ''),
+        $todo;
+
+    # Append this TODO to the file.
+    open my $FILE, '>>', $TODO_FILE
+        or die "ERROR: Unable to open '$TODO_FILE' for appending - $!";
+    print $FILE $line, "\n";
+    close $FILE or die "ERROR: Unable to close '$TODO_FILE' after appending - $!";
 }
 
 =head1 DESCRIPTION
