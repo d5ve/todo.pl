@@ -5,11 +5,11 @@ use warnings;
 
 use Data::Dumper;
 $Data::Dumper::Sortkeys = 1;
-use Pod::Usage ();
+use Digest::MD5;
 use File::Copy ();
 use File::Spec ();
 use POSIX      ();
-use Digest::MD5;
+use Pod::Usage ();
 
 =head1 NAME
 
@@ -93,8 +93,10 @@ sub list_todos {
 
     foreach my $todo ( read_todos() ) {
         next unless $todo->{status} eq 'T';
-        print "$todo->{id}\t$todo->{todo}\n"
-            if $filter_string eq '' || $todo->{todo} =~ m{\Q$filter_string\E}ixms;
+        printf("%s\t%s\t%s\n", $todo->{id}, substr($todo->{creation_date}, 0, 10), $todo->{todo})
+            if $filter_string eq ''
+                || $todo->{todo} =~ m{\Q$filter_string\E}ixms
+                || $todo->{creation_date} =~ m{\A \Q$filter_string\E}ixms;
     }
 }
 
@@ -211,6 +213,7 @@ sub mark_todo {
     my @todos = read_todos();
     my $unsaved_changes;
     my $id_found;
+    my $todo_string;
 
     foreach my $todo (@todos) {
         if ( $todo->{id} eq $id ) {
@@ -219,6 +222,7 @@ sub mark_todo {
                 $todo->{completion_date} = POSIX::strftime( '%Y-%m-%d_%H%M%S', localtime() );
                 $todo->{status}          = $status;
                 $unsaved_changes         = 1;
+                $todo_string             = $todo->{todo};
                 last;
             }
         }
@@ -237,7 +241,7 @@ sub mark_todo {
         close $FILE or die "ERROR: Unable to close '$temp_file' after appending - $!";
         File::Copy::move( $temp_file, $TODO_FILE )
             or die "Unable to move '$temp_file' to '$TODO_FILE' - $!";
-        print "TODO '$id' was marked as '$status'\n";
+        print "TODO '$id' was marked as '$status': $todo_string\n";
     }
     elsif ($id_found) {
         print "TODO '$id' was already marked as '$status'\n";
