@@ -38,7 +38,7 @@ or completed.
 
 The text file is in the following format:
 
-    Status:Creation date:Update date:Task string
+    Status:ID:Creation date:Update date:Task string
 
 With each task being on a single line.
 
@@ -48,13 +48,14 @@ The status codes currently are:
     C - Completed.
     D - Deleted without being completed.
 
-No code has been written yet, just this README.
+This script is now working, though with some rough edges. It's possible that
+running it multiple times concurrently can lose data, as the last writer wins.
 
 =head1 SEE ALSO
 
 =over 4
 
-=item * todo.txt by Gina Trapani, L<http://todotxt.com/>
+=item * B<todo.txt> by Gina Trapani, L<http://todotxt.com/>
 
 B<todo.txt> was the main inspiration for B<todo.pl>, and I used it for a couple of
 years. However, there were a couple of things that I couldn't get behaving as I
@@ -65,8 +66,8 @@ of the functionality of B<todo.txt>, but it's the subset I used or wanted.
 
 B<t-> was my inspiration for actually writing my own script. It is a tiny
 python script offering the minimum functionlity that the author needed. I have
-never used it, but read the source and figured I could do the same in perl
-easily.
+never used it, but read the source and figured I could write something as
+simple in Perl which did exactly what I wanted.
 
 =back
 
@@ -80,6 +81,5 @@ todo.pl is free software. It comes without any warranty, to the extent permitted
 by applicable law.
 
 todo.pl is released under the I<WTFPL Version 2.0> license - L<http://sam.zoy.org/wtfpl/COPYING>
-
 
 =cut

@@ -269,13 +269,14 @@ The status codes currently are:
     C - Completed.
     D - Deleted without being completed.
 
-No code has been written yet, just this README.
+This script is now working, though with some rough edges. It's possible that
+running it multiple times concurrently can lose data, as the last writer wins.
 
 =head1 SEE ALSO
 
 =over 4
 
-=item * todo.txt by Gina Trapani, L<http://todotxt.com/>
+=item * B<todo.txt> by Gina Trapani, L<http://todotxt.com/>
 
 B<todo.txt> was the main inspiration for B<todo.pl>, and I used it for a couple of
 years. However, there were a couple of things that I couldn't get behaving as I
